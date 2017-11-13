@@ -23,11 +23,15 @@ public class Bridge implements MqttCallback {
 	private MqttConnectOptions connOpt;
 	private Producer<String, String> kafkaProducer;
 	
-	private void connect(String serverURI, String clientId, String zkConnect, String username, String password) throws MqttException {
+	private void connect(String serverURI, String clientId, String zkConnect, String username, String password) throws Exception {
 		
+		String caCrtFile= "/home/sebastian/ssl/ca.crt";
+		String crtFile = "/home/sebastian/ssl/srv.crt";
+		String keyFile = "/home/sebastian/ssl/srv.key";
 		connOpt = new MqttConnectOptions();
 		connOpt.setUserName(username);
 		connOpt.setPassword(password.toCharArray());
+		connOpt.setSocketFactory(SslUtil.getSocketFactory(caCrtFile, crtFile, keyFile, password));
 		
 		mqtt = new MqttAsyncClient(serverURI, clientId);
 		mqtt.setCallback(this);
@@ -35,7 +39,7 @@ public class Bridge implements MqttCallback {
 		Properties props = new Properties();
 		
 		//Updated based on Kafka v0.8.1.1
-		props.put("metadata.broker.list", "localhost:8090");
+		props.put("metadata.broker.list", "localhost:8081");
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         props.put("partitioner.class", "example.producer.SimplePartitioner");
         props.put("request.required.acks", "1");
@@ -101,8 +105,9 @@ public class Bridge implements MqttCallback {
 
 	/**
 	 * @param args
+	 * @throws Exception 
 	 */
-	public static void main(String args[]) {
+	public static void main(String args[]) throws Exception {
 		CommandLineParser parser = null;
 		try {
 			parser = new CommandLineParser();
